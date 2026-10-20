@@ -1,0 +1,15 @@
+:root { color-scheme: light dark; }
+body { width: 390px; margin: 0; font: 14px system-ui, sans-serif; }
+main { padding: 14px; }
+h1 { font-size: 18px; margin: 0 0 4px; }
+h2 { font-size: 14px; margin: 14px 0 5px; }
+.note { color: #666; font-size: 12px; margin: 0 0 12px; }
+label { display: block; font-weight: 600; margin: 9px 0 4px; }
+input, textarea { box-sizing: border-box; width: 100%; padding: 7px; border: 1px solid #888; border-radius: 4px; font: inherit; }
+textarea { resize: vertical; }
+.buttons { display: flex; gap: 8px; margin-top: 12px; }
+button { flex: 1; padding: 8px; border: 1px solid #777; border-radius: 4px; cursor: pointer; }
+.primary { background: #0969da; color: white; border-color: #0969da; }
+#choose { width: 100%; margin-top: 12px; }
+#status { min-height: 18px; color: #666; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }

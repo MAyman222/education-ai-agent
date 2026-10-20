@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Practice Quiz Coach</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <h1>Practice Quiz Coach</h1>
+    <p class="note">Local Ollama only. Review the suggestion; choosing never submits the quiz.</p>
+    <label for="model">Ollama model</label>
+    <input id="model" value="llama3.2:latest" autocomplete="off">
+    <label for="question">Question or page text</label>
+    <textarea id="question" rows="8" placeholder="Use Read current page, or paste a question here."></textarea>
+    <label for="options">Answer choices (one per line, optional)</label>
+    <textarea id="options" rows="4" placeholder="Choice A&#10;Choice B&#10;Choice C"></textarea>
+    <div class="buttons">
+      <button id="read">Read current page</button>
+      <button id="solve" class="primary">Explain answer</button>
+    </div>
+    <p id="status" role="status"></p>
+    <section id="result" hidden>
+      <h2>Suggested answer</h2>
+      <pre id="answer"></pre>
+      <h2>Explanation</h2>
+      <pre id="explanation"></pre>
+      <h2>Confidence</h2>
+      <p id="confidence"></p>
+      <button id="choose" disabled>Choose this option on page</button>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
