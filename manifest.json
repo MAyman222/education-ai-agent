@@ -1,19 +1,28 @@
 {
   "manifest_version": 3,
   "name": "Ollama Practice Quiz Coach",
-  "version": "0.1.0",
-  "description": "Read a practice question from the current page and get a local Ollama explanation.",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["http://localhost:11434/*", "http://127.0.0.1:11434/*"],
+  "version": "0.10.0",
+  "description": "Answer practice MCQs, short questions and scenarios using local Ollama; explain on demand.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "http://localhost:11434/*",
+    "http://127.0.0.1:11434/*",
+    "http://localhost:1234/*",
+    "http://localhost:8080/*",
+    "http://localhost:8000/*"
+  ],
   "action": {
     "default_title": "Ollama Practice Quiz Coach",
     "default_popup": "popup.html"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
+  "background": {
+    "service_worker": "background.js"
+  },
+  "optional_host_permissions": [
+    "https://en.wikipedia.org/*"
   ]
 }

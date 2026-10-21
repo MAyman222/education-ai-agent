@@ -1,36 +1,21 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Practice Quiz Coach</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <main>
-    <h1>Practice Quiz Coach</h1>
-    <p class="note">Local Ollama only. Review the suggestion; choosing never submits the quiz.</p>
-    <label for="model">Ollama model</label>
-    <input id="model" value="llama3.2:latest" autocomplete="off">
-    <label for="question">Question or page text</label>
-    <textarea id="question" rows="8" placeholder="Use Read current page, or paste a question here."></textarea>
-    <label for="options">Answer choices (one per line, optional)</label>
-    <textarea id="options" rows="4" placeholder="Choice A&#10;Choice B&#10;Choice C"></textarea>
-    <div class="buttons">
-      <button id="read">Read current page</button>
-      <button id="solve" class="primary">Explain answer</button>
-    </div>
-    <p id="status" role="status"></p>
-    <section id="result" hidden>
-      <h2>Suggested answer</h2>
-      <pre id="answer"></pre>
-      <h2>Explanation</h2>
-      <pre id="explanation"></pre>
-      <h2>Confidence</h2>
-      <p id="confidence"></p>
-      <button id="choose" disabled>Choose this option on page</button>
-    </section>
-  </main>
-  <script src="popup.js"></script>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quiz Coach · Study session</title><link rel="stylesheet" href="popup.css"></head>
+<body><main>
+<header><div><span class="eyebrow">YOUR LOCAL STUDY COMPANION</span><h1>Quiz Coach <small>0.10.0</small></h1></div><span id="session-badge" class="badge">Locked</span></header>
+<section class="card privacy" aria-labelledby="privacy-title"><h2 id="privacy-title">1. Choose what’s allowed</h2><p class="note">Permissions last only while this window stays open. Reading includes sending quiz text to your chosen local model.</p>
+<div class="buttons"><button id="allow" class="primary">Allow read</button><button id="revoke" disabled>Lock &amp; clear</button></div>
+<button id="submit" class="permission" disabled aria-pressed="false">Allow submit: OFF</button><p class="note">Separate permission for Check, Reveal, Submit answer and Finish quiz. Start can select, fill, scroll and click Next without it. Use on your practice quizzes.</p>
+<button id="panel" class="link-button">↗ Open study window beside the quiz</button><p class="note compact">Recommended for continuous practice. Closing the small extension popup ends its session.</p></section>
+<section class="card"><h2>2. Choose your model</h2><label class="sr-only" for="model">Available local models</label><select id="model"><option>Scanning…</option></select><p id="model-status" class="note"></p><div class="buttons"><button id="scan">Refresh models</button><button id="test">Test connection</button></div>
+<details><summary>Connection settings</summary><pre id="servers"></pre><label for="server-url">Local OpenAI-compatible API URL</label><input id="server-url" placeholder="http://localhost:1234/v1"><button id="add-server">Add server &amp; scan</button><p class="note">Models must be exposed by a running local inference server.</p></details></section>
+<section class="card session" aria-labelledby="practice-title"><h2 id="practice-title">3. Practice at your pace</h2><p id="status" role="status" aria-live="polite">Reading locked. Click Allow read.</p><p id="elapsed" class="note"></p>
+<div class="metrics" aria-label="Session progress"><div><strong id="count-entered">0</strong><span>Entered</span></div><div><strong id="count-correct">0</strong><span>Site: correct</span></div><div><strong id="count-review">0</strong><span>Needs review</span></div></div>
+<fieldset id="read-controls" disabled><legend class="sr-only">Practice controls</legend>
+<div class="buttons sticky"><button id="start" class="primary">▶ Start / continue</button><button id="stop">Ⅱ Pause</button></div><p class="note">Automatically answers, scrolls and advances. Uncertain answers are kept for review while other detected questions continue. Incorrect website feedback or ambiguous controls pause the session.</p>
+<button id="scan-questions">Scan all questions</button><p id="scan-count" class="note">Scan the page to see every recognised question, including those below the screen.</p><details><summary>Detected questions</summary><ol id="question-list"></ol></details><div class="buttons"><button id="read">Answer next only</button><button id="solve">Answer edited question</button></div>
+<section class="answer-card" aria-labelledby="answer-title"><h3 id="answer-title">Latest answer</h3><p id="answered-question" class="note"></p><pre id="answer">Your answer will appear here.</pre><p id="quality" class="note"></p><ul id="sources"></ul><button id="explain" disabled>Pause &amp; explain this answer</button><pre id="explanation"></pre></section>
+<details><summary>Session answers <span id="history-count">(0)</span></summary><p class="note">Open an earlier answer for its explanation. Cleared when you lock or close this window.</p><div id="history"></div></details>
+<details><summary>Question preview / manual entry</summary><label for="question">Question or scenario</label><textarea id="question" rows="5"></textarea><label for="options">Choices, one per line (leave empty for written answers)</label><textarea id="options" rows="3"></textarea><p id="kind" class="note">Detected answers are entered on the quiz. Pasted questions return answers here.</p></details>
+<details><summary>Answer quality &amp; sources</summary><label class="toggle"><input id="reasoning" type="checkbox"> Enable model reasoning (slower)</label><label class="toggle"><input id="check" type="checkbox"> Compare two independent model answers (slower)</label><details><summary>Local study reference library</summary><p class="note">Includes a small CS/software-engineering foundation set. Add course notes for any subject as .txt or .md. Imported files are saved on this device until removed and used only after Allow read.</p><label for="notes-files">Add study notes</label><input id="notes-files" type="file" accept=".txt,.md,text/plain,text/markdown" multiple><p id="notes-status" class="note"></p><button id="clear-notes">Remove saved study notes</button></details><label for="reference">Reference passage — this opening only</label><textarea id="reference" rows="5" placeholder="Paste relevant lecture notes or source material."></textarea><label class="toggle"><input id="lookup" type="checkbox"> Allow Wikipedia lookup this opening</label><p class="note">Optional: sends question keywords to Wikipedia for reference passages. This is separate from Allow read.</p><label class="toggle"><input id="auto" type="checkbox"> Continuous practice is running</label></details>
+</fieldset></section><footer>Model answers can be wrong. “Site: correct” requires explicit website feedback. Your local server controls its own logging.</footer>
+</main><script src="popup.js"></script></body></html>

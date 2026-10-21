@@ -1,0 +1,33 @@
+﻿<!doctype html><meta charset="utf-8"><title>Coach DOM regression tests</title><style>body{font:16px sans-serif}.hidden-radio{position:absolute;opacity:0;width:0;height:0}fieldset{margin:10px}textarea{width:200px;height:60px}</style>
+<div id="fixture"></div><pre id="report">RUNNING</pre>
+<script>
+let messageListener;
+window.chrome={runtime:{onMessage:{addListener:f=>messageListener=f},sendMessage:async()=>({})},storage:{local:{get:async()=>({enabledSites:{}})},onChanged:{addListener:()=>{}}}};
+</script><script src="../flow.js"></script><script src="../content.js"></script><script>
+(async()=>{
+const fixture=document.querySelector('#fixture'),report=document.querySelector('#report');const passed=[];
+function send(m){return new Promise(resolve=>messageListener(m,{},resolve))}
+function check(value,name){if(!value)throw Error(name);passed.push(name)}
+try{
+ fixture.innerHTML='<nav>Unrelated Rubik news</nav><section><h2>Where were the belongings auctioned?</h2><ul><li><label><input class="hidden-radio" type="radio" name="q">New York</label></li><li><label><input class="hidden-radio" type="radio" name="q">London</label></li><li><label><input class="hidden-radio" type="radio" name="q">Paris</label></li><li><label><input class="hidden-radio" type="radio" name="q">Munich</label></li></ul><button id="submit">Submit</button></section>';
+ let clicked=false;fixture.querySelector('button').onclick=()=>clicked=true;
+ let r=(await send({type:'collect'}));check(r.data?.question==='Where were the belongings auctioned?','hidden radios: question isolated');check(r.data.options.length===4&&r.data.options[2].text==='Paris','all labels extracted');
+ check((await send({type:'select',key:r.data.key,id:'3'})).selected,'correct radio selected');check(fixture.querySelectorAll('input')[2].checked&&!clicked,'submit not clicked');
+ fixture.querySelector('h2').textContent='A completely different question?';check((await send({type:'select',key:r.data.key,id:'1'})).error,'stale question rejected');
+ fixture.innerHTML='<fieldset><legend>Which number is even?</legend><label><input type="radio" name="numbers">3</label><label><input type="radio" name="numbers">4</label></fieldset>';
+ r=(await send({type:'collect'}));check(r.data?.question==='Which number is even?','fieldset legend extracted');
+ fixture.innerHTML='<div class="question"><p>A student uses a loop that never ends.</p><p>Explain how a termination condition solves this problem.</p><textarea></textarea><button>Submit</button></div>';
+ r=(await send({type:'collect'}));check(r.data?.kind==='written'&&r.data.question.includes('A student uses')&&r.data.question.includes('termination'),'full scenario retained');
+ check((await send({type:'fill',key:r.data.key,answer:'The condition ends the loop.'})).written,'written answer filled');check(fixture.querySelector('textarea').value==='The condition ends the loop.','textarea holds answer');check((await send({type:'fill',key:r.data.key,answer:'replacement'})).error,'existing answer protected');
+ fixture.innerHTML='<div class="question"><p>Explain why the algorithm needs an input.</p></div>';
+ r=(await send({type:'collect'}));check(r.data?.kind==='text'&&!r.data.canFill,'scenario without field returns popup answer');
+ fixture.innerHTML='<form role="search"><label>Search the news?<input type="text" name="search"></label></form>';
+ check((await send({type:'collect'})).error,'search field not treated as answer');
+ fixture.innerHTML='<fieldset><legend>Which city is selected?</legend><div role="radio" tabindex="0" aria-checked="false" onclick="this.setAttribute(\'aria-checked\',\'true\')">Paris</div><div role="radio" tabindex="0" aria-checked="false">London</div></fieldset>';
+ r=(await send({type:'collect'}));check(r.data?.options[0].text==='Paris','ARIA radios extracted');check((await send({type:'select',key:r.data.key,id:'1'})).selected,'ARIA selection confirmed');
+ report.textContent='PASS '+passed.length+' DOM checks\n'+passed.join('\n');
+}catch(e){report.textContent='FAIL '+e.stack+'\nPassed: '+passed.join(', ')};console.error('COACH_RESULT: '+report.textContent)
+})();
+</script>
+
+

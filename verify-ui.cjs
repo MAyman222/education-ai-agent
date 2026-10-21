@@ -1,0 +1,13 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const read=name=>fs.readFileSync(__dirname+'/'+name,'utf8');
+const html=read('popup.html'),js=read('popup.js'),ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
+assert.equal(new Set(ids).size,ids.length);
+for(const match of js.matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.includes(match[1]),'Missing UI element '+match[1]);
+const manifest=JSON.parse(read('manifest.json'));assert.equal(manifest.version,'0.10.0');assert.ok(!manifest.content_scripts);assert.ok(manifest.permissions.includes('activeTab'));
+assert.deepEqual(manifest.optional_host_permissions,['https://en.wikipedia.org/*']);
+assert.match(html,/<fieldset id="read-controls" disabled>/);assert.match(html,/id="submit"[^>]*disabled/);assert.match(html,/id="submit"[^>]*aria-pressed="false"/);
+assert.ok(!/<input id="lookup"[^>]*checked/.test(html));assert.ok(!js.includes('studyReference:'));assert.ok(js.includes("files:['flow.js','runner.js','choices.js','content.js']"));
+for(const name of ['popup.js','content.js','runner.js','flow.js','privacy.js','providers.js','sources.js','background.js'])assert.ok(fs.existsSync(__dirname+'/'+name));
+assert.ok(!/<script(?![^>]*src=)[^>]*>/i.test(html),'No MV3-incompatible inline scripts');
+assert.match(read('popup.css'),/:focus-visible/);assert.match(html,/role="status"/);assert.match(html,/id="stop"/);
+console.log('PASS: UI IDs, locked controls, independent submit off by default, script loading, manifest permissions, focus styling, live status and Pause control. This is a static accessibility/wiring check, not a visual audit.');
