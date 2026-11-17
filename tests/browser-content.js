@@ -42,6 +42,26 @@
   window.mockReviewText='review case 1';await send({type:'authorize'});window.mockAuto=true;await send({type:'wake'});
   await new Promise((resolve,reject)=>{const started=Date.now(),interval=setInterval(()=>{if(!mockAuto){clearInterval(interval);resolve();}else if(Date.now()-started>12000){clearInterval(interval);reject(Error('Review continuation timed out'));}},100);});
   assert(fixture.querySelectorAll('[aria-pressed="true"]').length===2,'Uncertain first answer does not block the other two questions');assert(flowEvents.at(-1)?.phase==='paused'&&flowEvents.at(-1).message.includes('need review'),'Unresolved review is not declared finished');results.push('PASS: uncertain question kept for review while later questions are selected; unresolved quiz stays unfinished');await send({type:'revoke'});
+  window.mockReviewText='';window.mockSubmit=true;let questionIndex=0,marks=0,nexts=0,finishes=0;
+  function renderPaged(){
+   load('<main data-quiz><section><fieldset><legend>Which answer is correct for navigation case '+(++questionIndex)+'?</legend><label><input type="radio" name="paged">First</label><label><input type="radio" name="paged">Second</label></fieldset><footer><button id="mark" type="button">'+(questionIndex===3?'Done':'Mark')+'</button><button id="forward" type="button" disabled>❯</button></footer></section></main>');
+   fixture.querySelector('#mark').addEventListener('click',()=>{
+    marks++;const status=document.createElement('p');status.className='feedback';status.textContent='Correct';fixture.querySelector('fieldset').append(status);
+    if(questionIndex<3)fixture.querySelector('#forward').disabled=false;
+    else{const finish=document.createElement('button');finish.textContent='Finish quiz';finish.addEventListener('click',()=>{finishes++;});fixture.querySelector('footer').append(finish);}
+   });
+   fixture.querySelector('#forward').addEventListener('click',()=>{nexts++;renderPaged();});
+  }
+  renderPaged();await send({type:'authorize'});window.mockAuto=true;await send({type:'wake'});
+  await new Promise((resolve,reject)=>{const started=Date.now(),interval=setInterval(()=>{if(!mockAuto){clearInterval(interval);resolve();}else if(Date.now()-started>20000){clearInterval(interval);reject(Error('Mark/arrow/Done flow timed out'));}},100);});
+  assert(marks===3&&nexts===2&&finishes===1,'Footer Mark / arrow / Done / Finish clicks execute across 3 DOM pages');assert(flowEvents.at(-1)?.phase==='finished','Run reaches final finish action');
+  results.push('PASS: footer Mark → bare arrow across three DOM pages → Done → Finish (mocked model)');await send({type:'revoke'});
+  window.mockSubmit=false;let formSubmits=0;
+  load('<main><form><fieldset><legend>Which answer tests form navigation permission?</legend><label><input type="radio" name="permission">First</label><label><input type="radio" name="permission">Second</label></fieldset><button type="submit">Next</button></form></main>');
+  fixture.querySelector('form').addEventListener('submit',event=>{event.preventDefault();formSubmits++;});
+  await send({type:'authorize'});window.mockAuto=true;await send({type:'wake'});
+  await new Promise((resolve,reject)=>{const started=Date.now(),interval=setInterval(()=>{if(!mockAuto){clearInterval(interval);resolve();}else if(Date.now()-started>8000){clearInterval(interval);reject(Error('Form permission pause timed out'));}},100);});
+  assert(formSubmits===0&&/Allow submit/.test(flowEvents.at(-1)?.message),'Form-submitting Next is blocked without permission');results.push('PASS: native form Next cannot submit without Allow submit');await send({type:'revoke'});
   output.textContent=results.join('\n')+'\nALL DOM CHECKS PASSED';document.title='PASS · Reader DOM checks';
  }catch(error){output.textContent=results.join('\n')+'\nFAIL: '+error.stack;document.title='FAIL · Reader DOM checks';}
 })();
