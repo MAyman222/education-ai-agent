@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Quiz Coach · Study session</title><link rel="stylesheet" href="popup.css"></head>
 <body><main>
-<header><div><span class="eyebrow">YOUR LOCAL STUDY COMPANION</span><h1>Quiz Coach <small>0.10.0</small></h1></div><span id="session-badge" class="badge">Locked</span></header>
+<header><div><span class="eyebrow">YOUR LOCAL STUDY COMPANION</span><h1>Quiz Coach <small>0.11.0</small></h1></div><span id="session-badge" class="badge">Locked</span></header>
 <section class="card privacy" aria-labelledby="privacy-title"><h2 id="privacy-title">1. Choose what’s allowed</h2><p class="note">Permissions last only while this window stays open. Reading includes sending quiz text to your chosen local model.</p>
 <div class="buttons"><button id="allow" class="primary">Allow read</button><button id="revoke" disabled>Lock &amp; clear</button></div>
-<button id="submit" class="permission" disabled aria-pressed="false">Allow submit: OFF</button><p class="note">Separate permission for Check, Reveal, Submit answer and Finish quiz. Start can select, fill, scroll and click Next without it. Use on your practice quizzes.</p>
+<button id="submit" class="permission" disabled aria-pressed="false">Allow submit: OFF</button><p class="note">Allows Check, Mark, Submit and Done/Finish. Next is automatic; if Next submits a form, it also needs this permission. Turning this on resumes a run waiting for submission permission. Use on your practice quizzes.</p>
 <button id="panel" class="link-button">↗ Open study window beside the quiz</button><p class="note compact">Recommended for continuous practice. Closing the small extension popup ends its session.</p></section>
 <section class="card"><h2>2. Choose your model</h2><label class="sr-only" for="model">Available local models</label><select id="model"><option>Scanning…</option></select><p id="model-status" class="note"></p><div class="buttons"><button id="scan">Refresh models</button><button id="test">Test connection</button></div>
 <details><summary>Connection settings</summary><pre id="servers"></pre><label for="server-url">Local OpenAI-compatible API URL</label><input id="server-url" placeholder="http://localhost:1234/v1"><button id="add-server">Add server &amp; scan</button><p class="note">Models must be exposed by a running local inference server.</p></details></section>

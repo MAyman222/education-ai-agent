@@ -1,5 +1,5 @@
 ﻿(() => {
-  const VERSION = '0.10.0';
+  const VERSION = '0.11.0';
   if (globalThis.__quizCoachVersion === VERSION) return;
   // Refresh the page after updating the extension, so an old listener is removed.
   globalThis.__quizCoachVersion = VERSION;
@@ -203,25 +203,51 @@
     const all=candidates(true);
     const anchor=item||lastItem||all.find(candidate=>flow.answered(candidate,completed));
     if(!anchor||!flow.answered(anchor,completed))return {};lastItem=anchor;
-    let scope=anchor.root;
-    // Prefer the question's own controls; then its quiz form/container.
-    const selector='button,input[type="submit"],input[type="button"],[role="button"],a[href]';
-    const buttons=root=>[...root.querySelectorAll(selector)].filter(node=>visible(node)&&!node.disabled&&node.getAttribute('aria-disabled')!=='true'&&usedControls.get(node)!==lastItem?.key&&!node.closest(ignored)&&!node.hasAttribute('target')&&!anchor.controls.some(control=>control===node||control.contains(node)||node.contains(control)));
-    const kindFor=node=>QuizCoachRunner.classify(node.getAttribute('aria-label')||node.getAttribute('title')||node.innerText||node.value)||(anchor.root.contains(node)&&/^(submit|check|verify|reveal)$/i.test(clean(node.innerText||node.value))?'check':null);
-    let available=buttons(scope);
-    for(let depth=0;!available.some(node=>kindFor(node))&&scope.parentElement&&scope!==document.body&&depth<4;depth++){
-      scope=scope.parentElement;available=buttons(scope);
-    }
+    // Search each action separately: an in-question Next must not hide a footer Submit.
+    // Footer/nav are valid places for quiz controls, unlike question text extraction.
+    const selector='button,input[type="submit"],input[type="button"],input[type="image"],[role="button"],a[href],[onclick],[tabindex="0"]';
+    const excluded='script,style,header,[hidden],[aria-hidden="true"],[data-quiz-coach]';
+    const labels=node=>[
+      node.getAttribute('aria-label'),node.getAttribute('title'),node.innerText,node.value,
+      node.getAttribute('alt'),node.getAttribute('rel')==='next'?'next':null,
+      ...associated(node).map(child=>child.innerText||child.textContent),
+      ...[...node.querySelectorAll('svg title,img[alt]')].map(child=>child.textContent||child.getAttribute('alt'))
+    ].map(clean).filter(Boolean);
+    const kindFor=node=>labels(node).map(QuizCoachRunner.classify).find(Boolean);
+    const eligible=node=>visible(node)&&!node.disabled&&!node.matches(':disabled')&&node.getAttribute('aria-disabled')!=='true'&&usedControls.get(node)!==anchor.key&&!node.closest(excluded)&&!node.hasAttribute('target')&&!all.some(question=>question.controls.some(control=>control===node||control.contains(node)||node.contains(control)))&&!anchor.controls.some(control=>control===node||control.contains(node)||node.contains(control));
     const result={};
-    for(const node of available){
-      const kind=kindFor(node);if(!kind)continue;
-      // Only explicit same-origin links may be followed.
-      if(node.matches('a')&&new URL(node.href,location.href).origin!==location.origin)continue;
-      if(result[kind]){
-        const explicit=node=>/^(next question|submit answer|check answer)$/i.test(clean(node.getAttribute('aria-label')||node.innerText||node.value));
-        if(explicit(node)&&!explicit(result[kind]))result[kind]=node;
-        else if(explicit(node)===explicit(result[kind]))result.ambiguous=true;
-      }else result[kind]=node;
+    let scope=anchor.root,depth=0;
+    const matches={check:[],next:[],finish:[]};
+    while(scope){
+      const available=[...scope.querySelectorAll(selector)].filter(eligible);
+      for(const kind of ['check','next','finish']){
+        if(matches[kind].length)continue;
+        matches[kind]=available.filter(node=>{
+          if(kindFor(node)!==kind)return false;
+          if((kind==='check'||kind==='finish')&&!anchor.root.contains(node)&&all.some(question=>!flow.answered(question,completed)))return false;
+          if(node.matches('a')&&new URL(node.href,location.href).origin!==location.origin)return false;
+          // Don't steal another question's local controls, or site-wide navigation.
+          if(all.some(question=>question.key!==anchor.key&&question.root.contains(node)&&!question.root.contains(anchor.root)))return false;
+          if((node.closest('nav,footer,[role="navigation"]'))&&scope===document.body){
+            const form=node.form||node.closest('form');
+            if(!(form?.contains(anchor.root)||form&&anchor.controls.some(control=>control.form===form)||node.closest('main,[data-quiz],.quiz,#quizcontainer')))return false;
+          }
+          return true;
+        });
+      }
+      if(scope===document.body||depth++>=12)break;
+      scope=scope.parentElement;
+    }
+    for(const kind of ['check','next','finish']){
+      let nodes=matches[kind];
+      // A nested span/role button is one control, not an ambiguity.
+      nodes=nodes.filter(node=>!nodes.some(other=>other!==node&&other.contains(node)));
+      if(nodes.length>1){
+        const explicit=nodes.filter(node=>labels(node).some(text=>/^(next question|submit answer|check answer|mark answer|finish quiz)$/i.test(text)));
+        if(explicit.length===1)nodes=explicit;
+      }
+      if(nodes.length>1)result.ambiguous=true;
+      else if(nodes.length)result[kind]=nodes[0];
     }
     return result;
   }
@@ -237,7 +263,7 @@
     },
     summary:async()=>{
       requireRead();const all=candidates(true),entered=all.filter(item=>completed.has(item.key)).length;
-      const counters=[...document.querySelectorAll('legend,h1,h2,h3,h4,span,p')].map(node=>clean(node.textContent)).filter(text=>text.length<80).map(text=>text.match(/^(\d+)\s*\/\s*(\d+)(?:\s*[—–-]|$)/)).filter(Boolean);
+      const counters=[...document.querySelectorAll('legend,h1,h2,h3,h4,span,p')].map(node=>clean(node.textContent)).filter(text=>text.length<80).map(text=>text.match(/^(?:question\s+)?(\d+)\s*(?:\/|of)\s*(\d+)(?:\s*[—–:-]|$)/i)).filter(Boolean);
       const total=Math.max(0,...counters.map(match=>Number(match[2])));
       const complete=all.length>0&&all.every(item=>completed.has(item.key))&&(!total||entered>=total);
       return {complete,message:all.length?'There may be more questions or unsupported controls. Only '+entered+' recognised questions were entered; the quiz has not been declared finished.':'No selectable MCQ or answer field detected. This page may use custom controls, an embedded frame, or a read-only quiz preview. It has not been declared finished.'};
@@ -247,8 +273,11 @@
       const allowed=await access();requireRead();
       if(!allowed.auto||((kind==='check'||kind==='finish')&&!allowed.submit))throw Error('Action permission was revoked.');
       if(node.form&&node.type==='submit'&&!allowed.submit)throw Error('This Next control also submits the form. Allow submit, then continue.');
-      if(!node.isConnected||!visible(node)||node.disabled||usedControls.get(node)===lastItem?.key)throw Error('Quiz control changed. Continue on the page.');
-      usedControls.set(node,lastItem?.key);node.scrollIntoView({block:'center',behavior:'instant'});node.click();
+      if(!node.isConnected||!visible(node)||node.disabled||node.matches(':disabled')||node.getAttribute('aria-disabled')==='true'||usedControls.get(node)===lastItem?.key)throw Error('Quiz control changed. Continue on the page.');
+      node.scrollIntoView({block:'center',behavior:'instant'});
+      // Allow validation-blocked submits to be retried after the user fixes the form.
+      if(node.form&&node.type==='submit'&&!node.form.checkValidity())throw Error('The website requires another field before submitting. Complete it, then continue.');
+      usedControls.set(node,lastItem?.key);node.click();
     },
     feedback:async item=>{
       requireRead();const root=(item||lastItem)?.root;if(!root?.isConnected)return null;

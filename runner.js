@@ -1,10 +1,13 @@
 /* Continuous practice workflow. All page actions are delegated to a gated adapter. */
 (function(root){
  const classify = text => {
-  text=String(text||'').replace(/[→›»❯➜⟶]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
-  if(/^(check|verify|reveal|show)( (my|your|the))? answer(s)?$/.test(text)||/^submit answer(s)?$/.test(text))return 'check';
-  if(/^(next|next question|next page|continue quiz|continue to next question)$/.test(text))return 'next';
-  if(/^(submit quiz|submit all( and finish)?|finish quiz|finish attempt|submit all answers)$/.test(text))return 'finish';
+  text=String(text||'').replace(/\s+/g,' ').trim().toLowerCase();
+  if(/^(arrow_forward|arrow_right|chevron_right|navigate_next|arrow-right|chevron-right|right arrow)$/.test(text))return 'next';
+  if(/^[→›»❯➜⟶➡➔❱>]+$/.test(text))return 'next';
+  text=text.replace(/[→›»❯➜⟶➡➔❱>]/g,'').replace(/\s+/g,' ').trim().replace(/[.!:]$/,'');
+  if(/^(check|verify|reveal|show|mark)( (my|your|the))? answer(s)?$/.test(text)||/^(submit|check|verify|reveal|mark|done)$/.test(text)||/^submit answer(s)?$/.test(text))return 'check';
+  if(/^(next|next question|next page|continue|continue quiz|continue to next question|go to next question)$/.test(text))return 'next';
+  if(/^(finish|complete quiz|submit quiz|submit test|submit all( and finish)?|finish quiz|finish attempt|submit all answers)$/.test(text))return 'finish';
   return null;
  };
  function create(page){
@@ -50,7 +53,7 @@
       if(await page.next())continue;
       const after=await page.controls(item);
       if(after.ambiguous){await page.event('paused','Several navigation controls match. Continue on the page.');break;}
-      if(after.next){await guard(ticket);await page.click(after.next,'next',ticket);
+      if(after.next){await guard(ticket);await page.event('advancing','Opening the next question.',item.key);await page.click(after.next,'next',ticket);
        if(!(await waitForNext(item))){await page.event('paused','Next did not open another question within 10 seconds. Continue on the page, then Start.');break;}continue;}
       if(after.finish){
        if(!(await guard(ticket)).submit){await page.event('paused','Answers entered. Allow submit to finish this practice quiz.');break;}
@@ -61,7 +64,15 @@
      }
      if(reviewCount){await page.event('paused',reviewCount+' question(s) need review. Other detected questions were processed; nothing has been declared finished.');break;}
      // Resume after pause: a selected last question may still need Check or Next.
-     const controls=await page.controls(null);
+     let controls=await page.controls(null);
+     // Results and Next controls can mount after an asynchronous check completes.
+     // Give the page time to reveal them before reporting completion/no controls.
+     for(let tries=0;tries<12&&!controls.check&&!controls.next&&!controls.finish&&!controls.ambiguous;tries++){
+      await page.wait(250);await guard(ticket);
+      if(await page.next())break;
+      controls=await page.controls(null);
+     }
+     if(await page.next())continue;
      if(controls.ambiguous){await page.event('paused','Navigation is ambiguous. Continue on the page.');break;}
      const permission=await guard(ticket);
      if(controls.check){
@@ -72,7 +83,8 @@
      }
      const after=await page.controls(null);
      if(after.ambiguous){await page.event('paused','Navigation is ambiguous. Continue on the page.');break;}
-     if(after.next){await guard(ticket);await page.click(after.next,'next',ticket);
+     if(await page.next())continue; // Check may replace the question immediately.
+     if(after.next){await guard(ticket);await page.event('advancing','Opening the next question.');await page.click(after.next,'next',ticket);
       if(!(await waitForNext(null))){await page.event('paused','No new unanswered question detected within 10 seconds of Next.');break;}continue;}
      if(after.finish){if(!permission.submit){await page.event('paused','Allow submit to finish this practice quiz.');break;}await guard(ticket);await page.click(after.finish,'finish',ticket);await page.event('finished','Finish clicked. Check the website for your result.');break;}
      const summary=await page.summary?.();

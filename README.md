@@ -1,8 +1,21 @@
-# Quiz Coach 0.10.0
+# Quiz Coach — Local 0.11.0
+
+This is the independent local-model-only project in AI-agent-fixed, with its own Git
+repository. Use it for Ollama and compatible local servers. Optional Wikipedia lookup
+is a reference feature; this project has no cloud AI/API-key mode.
+
+AI-agent-improvements is the separate Local + API project, with its own repository.
+Do not routinely merge the two projects. Folder paths were retained for Chrome;
+reload this extension to see the new name. The v0.11.0 baseline tag is unchanged.
 
 ## Install or update
 
-Project folder: C:\Users\ayman\Documents\Codex\2026-10-20\new-chat\AI-agent-fixed
+Project folder: this directory, containing manifest.json.
+
+GitHub repository: https://github.com/MAyman222/education-ai-agent
+
+Version control: see CONTRIBUTING.md for the working v0.11.0 baseline, isolated development
+branches, validation, and recovery without discarding changes.
 
 1. Open chrome://extensions. Reload the extension if it uses this folder. Otherwise choose Developer mode, Load unpacked, then this folder.
 2. Refresh the quiz webpage. This removes readers injected by older versions.
@@ -10,10 +23,19 @@ Project folder: C:\Users\ayman\Documents\Codex\2026-10-20\new-chat\AI-agent-fixe
 4. Click Allow read. Each opening starts locked. Choose a model from your running local server.
 5. Click Scan all questions. The list includes recognised questions below the viewport. A count is a detection count, not a correctness score.
 6. Click Start / continue. The extension attempts selection/text entry, scrolling and recognised Next controls.
-7. Independently enable Allow submit if you want Check, Reveal, Submit answer or Finish controls clicked. A native form-submitting Next also requires this permission.
+7. Independently enable Allow submit if you want Check, Mark, Done, Reveal, Submit answer or Finish controls clicked. A native form-submitting Next also requires this permission. Granting it resumes a run paused waiting for submission permission.
 8. Pause to explain an answer. Lock & clear or close the study window to revoke access and clear the session.
 
 The extension uses your existing Ollama/OpenAI-compatible local model server. A cloned or duplicated model is unnecessary. Refresh models to discover what running servers expose. It cannot load arbitrary model files directly from disk.
+
+## Changes in 0.11.0
+
+- Recognises plain Submit, Mark, Done, Finish, Continue, bare forward arrows and common accessible icon labels. Done is treated as a question check so it can advance to another question instead of ending the session prematurely.
+- Looks for each action separately through question/quiz containers, including quiz footers, navigation bars and deeper wrappers. An in-question Next no longer hides a footer Submit. Accessible labels, tooltips and visible text are tried separately.
+- Does not use another question's local buttons or unrelated site navigation. Page-wide submission waits until the detected questions have answers. Ambiguous controls still pause.
+- Form-submitting Next keeps the separate submit gate. Invalid forms report their validation blocker and can be retried after correction. Failed permission changes restore the previous UI state.
+- Waits briefly for delayed Next controls and recognises Question N of M counters. The existing same-origin reinjection resumes full-page navigation while the study window stays open; changing origin locks the session.
+- Validation for this update: all Node suites passed, including production control discovery/click and submit-toggle tests with DOM/UI doubles, plus the existing mocked same-origin reinjection integration test. Added actual-DOM fixtures for footer Mark → arrow → Done → Finish and denied form submission. The current session exposes no controllable browser, so these new browser fixtures have not been run here. No model-answer accuracy claim is made.
 
 ## Changes in 0.10.0
 

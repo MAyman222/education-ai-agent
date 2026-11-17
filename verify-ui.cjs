@@ -3,7 +3,7 @@ const read=name=>fs.readFileSync(__dirname+'/'+name,'utf8');
 const html=read('popup.html'),js=read('popup.js'),ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 assert.equal(new Set(ids).size,ids.length);
 for(const match of js.matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.includes(match[1]),'Missing UI element '+match[1]);
-const manifest=JSON.parse(read('manifest.json'));assert.equal(manifest.version,'0.10.0');assert.ok(!manifest.content_scripts);assert.ok(manifest.permissions.includes('activeTab'));
+const manifest=JSON.parse(read('manifest.json'));assert.equal(manifest.version,'0.11.0');assert.ok(!manifest.content_scripts);assert.ok(manifest.permissions.includes('activeTab'));
 assert.deepEqual(manifest.optional_host_permissions,['https://en.wikipedia.org/*']);
 assert.match(html,/<fieldset id="read-controls" disabled>/);assert.match(html,/id="submit"[^>]*disabled/);assert.match(html,/id="submit"[^>]*aria-pressed="false"/);
 assert.ok(!/<input id="lookup"[^>]*checked/.test(html));assert.ok(!js.includes('studyReference:'));assert.ok(js.includes("files:['flow.js','runner.js','choices.js','content.js']"));

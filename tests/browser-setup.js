@@ -1,7 +1,7 @@
-window.readerListener=null;window.readerMessages=[];window.mockAuto=false;window.flowEvents=[];
+window.readerListener=null;window.readerMessages=[];window.mockAuto=false;window.mockSubmit=false;window.flowEvents=[];
 window.chrome={runtime:{sendMessage:async message=>{
  readerMessages.push(message);
- if(message.type==='session-status')return {allowed:message.token==='fixture-token',auto:mockAuto,submit:false};
+ if(message.type==='session-status')return {allowed:message.token==='fixture-token',auto:mockAuto,submit:mockSubmit};
  if(message.type==='answer'){
   if(window.mockReviewText&&message.data.question.includes(mockReviewText))return {review:true};
   return new Promise(resolve=>readerListener({type:'select',token:message.token,key:message.data.key,id:'1'},{},reply=>resolve({applied:!!reply.selected,error:reply.error})));

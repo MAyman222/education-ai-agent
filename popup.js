@@ -80,7 +80,10 @@ async function scanQuestions(){
 }
 action('scan-questions',scanQuestions);
 action('read',()=>answerCurrent(true));action('solve',()=>answerCurrent());action('start',async()=>{await scanQuestions();await saveSettings();await setAuto(true);status('Practice running. The quiz will scroll and advance automatically.');});
-action('submit',async()=>{if(!token)throw Error('Click Allow read first.');submitAllowed=!submitAllowed;paintPermission();await saveSettings();status(submitAllowed?'Submit allowed for this opening. Click Start / continue when ready.':'Submit disabled. Selecting and navigation remain available.');});
+action('submit',async()=>{if(!token)throw Error('Click Allow read first.');const previous=submitAllowed;submitAllowed=!submitAllowed;paintPermission();try{await saveSettings();}catch(error){submitAllowed=previous;paintPermission();throw error;}
+ const resume=submitAllowed&&flowState?.phase==='paused'&&/allow submit|also submits the form/i.test(flowState.message||'');
+ if(resume){await setAuto(true);status('Submit allowed. Continuing the paused quiz.');}
+ else status(submitAllowed?'Submit allowed for this opening. Click Start / continue when ready.':'Submit disabled. Selecting and navigation remain available.');});
 action('stop',async()=>{await pause();await show();status('Paused. Your session answers are still available.');});action('scan',scan);
 action('test',async()=>{if(token)await pause();await saveSettings();status('Testing the selected local model…');const r=await chrome.runtime.sendMessage({type:'test-model',tabId:tab.id});if(r.error)throw Error(r.error);status('Connection passed: the selected model answered the test correctly.');if(token)await show();});
 action('explain',async()=>{await pause();await saveSettings();const r=await chrome.runtime.sendMessage({type:'explain',tabId:tab.id,token});if(r.error)throw Error(r.error);await show();});

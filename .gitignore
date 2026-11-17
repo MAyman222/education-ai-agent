@@ -1,25 +1,43 @@
-# Private API keys and passwords
+# Secrets and machine-specific configuration
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+credentials*.json
+secrets*.json
 
-# Installed dependencies
+# Dependencies, caches, generated packages and local models
 node_modules/
-
-# Python environments
 .venv/
 venv/
 __pycache__/
-
-# Local AI models
-models/
-*.gguf
-*.safetensors
-
-# Temporary and generated files
+*.pyc
 *.log
 coverage/
+dist/
+build/
+*.zip
+*.gguf
+*.safetensors
+*.bin
+
+# Private notes, captured quiz data and disposable browser profiles
+notes/
+study-notes/
+captures/
+screenshots/
+exports/
+profiles/
+chrome-profile/
+edge-profile/
+work/
+outputs/
+
+# Editor and OS files
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+Desktop.ini
+*.tmp
